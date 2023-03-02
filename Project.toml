@@ -1,0 +1,4 @@
+name = "Backprop"
+uuid = "5e1bdbf1-1c6d-4120-abfd-6c7f3ee5d057"
+authors = ["José Luis Castro García <jcastrog1702@gmail.com>"]
+version = "0.1.0"
