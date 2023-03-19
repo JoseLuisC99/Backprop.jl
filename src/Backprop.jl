@@ -1,5 +1,7 @@
 module Backprop
 
-greet() = print("Hello World!")
+export Jacobi
+
+include(joinpath("jacobi", "Jacobi.jl"))
 
 end # module Backprop

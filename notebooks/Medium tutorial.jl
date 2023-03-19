@@ -11,27 +11,6 @@ begin
 	using Random
 end
 
-# ╔═╡ e890414f-c1d6-4d66-b05e-1cc0e958b1fe
-md"""
-# Computationa graphs: tutorial
-
-Code used in the Medium post *Backpropagation: the ugly details*
-"""
-
-# ╔═╡ f8cfbe7f-f703-4cdb-953f-34c6b2807a00
-md"""
-The first step is try to wrap all tensor operations in order to take the control of calculation flow. Fir this, we are going to create a basic data structure that will contain all information we need:
-
-- `data` -- matrix of real numbers
-- `grad` -- gradient of `data`
-- `requires_grad` -- flag for computing or no the gradient of the tensor
-- `grad_fn` -- gradient function
-- `prev` -- set with the operands used for create the tensor
-- `op` -- informational string with the name of the operation
-
-Internally, the data will be contained in a matrix, but we want to accept vector or numbers as a tensors, so we must create the constructors for these cases. If our tensor is result of applied one operations, we save the operands.
-"""
-
 # ╔═╡ a3044cd6-803f-40f8-b8fc-03b10a5f85ee
 begin
 
@@ -67,11 +46,43 @@ end
 
 # ╔═╡ 060cd84f-dacd-4936-8b26-2b11488c4943
 begin
-	Base.length(x::Tensor) = length(x.data)
+	# Iteration
 	Base.iterate(x::Tensor) = iterate(x.data)
-	Base.iterate(x::Tensor, n::Int64) = iterate(x.data, n)
+	Base.iterate(x::Tensor, state::Integer) = iterate(x.data, state)
+
+	# Indexing
+	Base.getindex(x::Tensor, i::Int) = getindex(x.data, i)
+	Base.setindex!(x::Tensor, v::Real, i::Int) = setindex!(x.data, v, i)
+	Base.firstindex(x::Tensor) = firstindex(x.data)
+	Base.lastindex(x::Tensor) = lastindex(x.data)
+
+	# Abstract arrays
 	Base.size(x::Tensor) = size(x.data)
+	Base.length(x::Tensor) = length(x.data)
+	Base.IndexStyle(::Type{<:Tensor}) = IndexLinear()
+	Base.BroadcastStyle(::Type{<:Tensor}) = Broadcast.ArrayStyle{Tensor}()
 end
+
+# ╔═╡ e890414f-c1d6-4d66-b05e-1cc0e958b1fe
+md"""
+# Computationa graphs: tutorial
+
+Code used in the Medium post *Backpropagation: the ugly details*
+"""
+
+# ╔═╡ f8cfbe7f-f703-4cdb-953f-34c6b2807a00
+md"""
+The first step is try to wrap all tensor operations in order to take the control of calculation flow. Fir this, we are going to create a basic data structure that will contain all information we need:
+
+- `data` -- matrix of real numbers
+- `grad` -- gradient of `data`
+- `requires_grad` -- flag for computing or no the gradient of the tensor
+- `grad_fn` -- gradient function
+- `prev` -- set with the operands used for create the tensor
+- `op` -- informational string with the name of the operation
+
+Internally, the data will be contained in a matrix, but we want to accept vector or numbers as a tensors, so we must create the constructors for these cases. If our tensor is result of applied one operations, we save the operands.
+"""
 
 # ╔═╡ b2b7bfda-4afc-4543-ae32-e63d3cc4919f
 md"""
