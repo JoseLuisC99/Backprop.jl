@@ -1,5 +1,6 @@
 using Test
-using Backprop.Jacobi
+import Backprop: Jacobi
+import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
 
 @testset "Forward execution algebra" begin
     m = Tensor([4.4, 0.9, 2.6])
@@ -23,7 +24,7 @@ using Backprop.Jacobi
                  1.8421 -1.0111  0.6293  0.2473;
                  0.2080  0.1901  1.4661  0.5014;
                  1.7475  0.1142  0.3445 -0.7199])
-    x = Tensor([0.1503, -0.9509,  1.7091,  1.0097])
+    x = Tensor([0.1503, -0.9509, 1.7091, 1.0097])
     b = Tensor([-0.0478, 1.7576, -0.0732, -0.1256, -2.4584])
     V = Tensor([-1.9776 -1.5477 -0.2004;
                 -0.0098  0.2112 -0.4579;
@@ -41,7 +42,7 @@ using Backprop.Jacobi
                 -3.9648  0.3382  2.6229])
 
     @test W * x ≈ Tensor([3.2854, 0.7442, 2.5636, 2.8625, 0.0160]) atol=1e-4
-    @test W * x + b ≈ Tensor([ 3.2376,  2.5018,  2.4904,  2.7369, -2.4424]) atol=1e-4
+    @test W * x + b ≈ Tensor([ 3.2376, 2.5018, 2.4904, 2.7369, -2.4424]) atol=1e-4
     @test W * V ≈ Tensor([ 2.4296  1.3999  1.4445;
          1.0457  0.9368  0.1491;
         -2.2497 -2.5402 -0.0519;
@@ -75,53 +76,53 @@ end
     q = Tensor([1.3, 0.4, 2.9, 2.2])
 
     t = m + n + p
-    backward(t, retain_graph=true)
-    @test m.grad ≈ ones_tensor(size(m))
-    @test n.grad ≈ ones_tensor(size(n))
+    Jacobi.backward(t, retain_graph=true)
+    @test m.grad ≈ Jacobi.ones(size(m))
+    @test n.grad ≈ Jacobi.ones(size(n))
     @test p.grad === nothing
-    zero_grad(t)
-    @test m.grad ≈ zeros_tensor(size(m))
-    @test n.grad ≈ zeros_tensor(size(n))
+    Jacobi.zero_grad(t)
+    @test m.grad ≈ Jacobi.zeros(size(m))
+    @test n.grad ≈ Jacobi.zeros(size(n))
     @test p.grad === nothing
 
     t = (m ⊙ n) + p
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test m.grad ≈ Tensor([0.2, 1.9, 7.5])
     @test n.grad ≈ Tensor([4.4, 0.9, 2.6])
     @test p.grad === nothing
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     t = (m - n) + p
-    backward(t, retain_graph=true)
-    @test m.grad ≈ ones_tensor(size(m))
-    @test n.grad ≈ -ones_tensor(size(n))
+    Jacobi.backward(t, retain_graph=true)
+    @test m.grad ≈ Jacobi.ones(size(m))
+    @test n.grad ≈ -Jacobi.ones(size(n))
     @test p.grad === nothing
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     t = -(p ⊙ n)
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test n.grad ≈ Tensor([-1.9, -7.8, -5.6])
     @test p.grad === nothing
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     t = (m + n) ^ 2
-    backward(t, retain_graph=true)
-    @test m.grad ≈ Tensor([9.2,  5.6, 20.2]) atol=1e-3
-    @test n.grad ≈ Tensor([9.2,  5.6, 20.2]) atol=1e-3
-    zero_grad(t)
+    Jacobi.backward(t, retain_graph=true)
+    @test m.grad ≈ Tensor([9.2, 5.6, 20.2]) atol=1e-3
+    @test n.grad ≈ Tensor([9.2, 5.6, 20.2]) atol=1e-3
+    Jacobi.zero_grad(t)
 
     t = (m + n) ^ 0.5
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test m.grad ≈ Tensor([0.2331, 0.2988, 0.1573]) atol=1e-3
     @test n.grad ≈ Tensor([0.2331, 0.2988, 0.1573]) atol=1e-3
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     W = Tensor([-1.2844 -3.0717 -0.0539  0.6434;
                 -0.6646 -0.4634 -0.1146  0.5935;
                  1.8421 -1.0111  0.6293  0.2473;
                  0.2080  0.1901  1.4661  0.5014;
                  1.7475  0.1142  0.3445 -0.7199], requires_grad=true)
-    x = Tensor([0.1503, -0.9509,  1.7091,  1.0097])
+    x = Tensor([0.1503, -0.9509, 1.7091, 1.0097])
     b = Tensor([-0.0478, 1.7576, -0.0732, -0.1256, -2.4584], requires_grad=true)
     V = Tensor([-1.9776 -1.5477 -0.2004;
                 -0.0098  0.2112 -0.4579;
@@ -139,29 +140,29 @@ end
                 -3.9648  0.3382  2.6229], requires_grad=true)
 
     t = W * x + b
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test W.grad ≈ Tensor([0.1503 -0.9509  1.7091  1.0097;
         0.1503 -0.9509  1.7091  1.0097;
         0.1503 -0.9509  1.7091  1.0097;
         0.1503 -0.9509  1.7091  1.0097;
         0.1503 -0.9509  1.7091  1.0097]) atol=1e-3
-    @test b.grad ≈ ones_tensor(size(b)) atol=1e-3
+    @test b.grad ≈ Jacobi.ones(size(b)) atol=1e-3
     @test x.grad === nothing
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     t = (W * V) + U
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test W.grad ≈ Tensor([-3.7257 -0.2565  2.8874 -0.2230;
         -3.7257 -0.2565 2.8874 -0.2230;
         -3.7257 -0.2565 2.8874 -0.2230;
         -3.7257 -0.2565 2.8874 -0.2230;
         -3.7257 -0.2565 2.8874 -0.2230]) atol=1e-3
-    @test U.grad ≈ ones_tensor(size(U)) atol=1e-3
+    @test U.grad ≈ Jacobi.ones(size(U)) atol=1e-3
     @test V.grad === nothing
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     t = (U + Y) ^ 2
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test U.grad ≈ Tensor([-3.7054e+00 -2.0482e+00  4.7082e+00;
         -1.0121e+01  6.5020e-01 -1.0600e-02;
         -2.1410e+00 -5.7232e+00 -1.4965e+01;
@@ -172,10 +173,10 @@ end
         -2.1410e+00 -5.7232e+00 -1.4965e+01;
         -4.6324e+00 -6.3062e+00 -1.8333e+01;
         -1.2976e+01 -5.4100e-01  4.0278e+00]) atol=1e-3
-    zero_grad(t)
+    Jacobi.zero_grad(t)
 
     t = U ⊙ Y
-    backward(t, retain_graph=true)
+    Jacobi.backward(t, retain_graph=true)
     @test U.grad ≈ Tensor([-1.2500 -1.1406  0.9118;
         -4.1188 -0.7481  0.5305;
         -0.7784 -2.0328 -5.7128;
@@ -186,5 +187,179 @@ end
         -0.2921 -0.8288 -1.7697;
         -0.8759 -1.1469 -1.0327;
         -2.5232 -0.6087 -0.6090]) atol=1e-3
-    zero_grad(t)
+    Jacobi.zero_grad(t)
+end
+
+@testset "Square root and reciprocal" begin
+    a = Tensor([1.6863 -1.3924  0.3273  1.5277;
+        -0.2091  0.9064  1.9805  1.4239;
+         0.1398 -0.4376  0.2882  0.3368;
+        -0.2120 -1.1943 -0.7176  0.5512], requires_grad=true)
+    b = Tensor([-0.3297  0.9989  0.8826 -1.6924;
+        -2.2661  0.0370  1.5627 -0.2034;
+         0.8562 -0.2710 -0.2175 -0.8799;
+        -0.5423 -1.0775 -0.2873 -1.5499], requires_grad=true)
+    x = Tensor([0.5878 0.1838 0.0501 0.4970;
+        0.2735 0.7286 0.0847 0.9805;
+        0.0684 0.2095 0.3645 0.0288;
+        0.0520 0.0889 0.8922 0.7723], requires_grad=true)
+    y = Tensor([0.9254 0.4395 0.6223 0.6893;
+        0.0820 0.8499 0.4942 0.0194;
+        0.7160 0.9634 0.4022 0.3753;
+        0.2978 0.6996 0.5177 0.4814], requires_grad=true)
+
+    t1 = Jacobi.reciprocal(a + b)
+    t2 = sqrt(x + y)
+
+    @test t1 ≈ Tensor(
+        [ 0.7371 -2.5413  0.8265 -6.0716;
+         -0.4040  1.0600  0.2822  0.8193;
+          1.0040 -1.4112 14.1443 -1.8413;
+         -1.3257 -0.4402 -0.9951 -1.0013]) atol=1e-3
+    @test t2 ≈ Tensor(
+        [1.2301 0.7895 0.8200 1.0892;
+         0.5962 1.2564 0.7609 0.9999;
+         0.8857 1.0830 0.8756 0.6357;
+         0.5914 0.8880 1.1874 1.1197]) atol=1e-3
+    
+    Jacobi.backward(t1)
+    Jacobi.backward(t2)
+
+    @test a.grad ≈ Tensor(
+        [-5.4337e-01 -6.4582e+00 -6.8313e-01 -3.6865e+01;
+         -1.6322e-01 -1.1236e+00 -7.9654e-02 -6.7131e-01;
+         -1.0080e+00 -1.9916e+00 -2.0006e+02 -3.3903e+00;
+         -1.7576e+00 -1.9376e-01 -9.9027e-01 -1.0026e+00]) atol=1e-3
+    @test b.grad ≈ Tensor(
+        [-5.4337e-01 -6.4582e+00 -6.8313e-01 -3.6865e+01;
+         -1.6322e-01 -1.1236e+00 -7.9654e-02 -6.7131e-01;
+         -1.0080e+00 -1.9916e+00 -2.0006e+02 -3.3903e+00;
+         -1.7576e+00 -1.9376e-01 -9.9027e-01 -1.0026e+00]) atol=1e-3
+    @test x.grad ≈ Tensor(
+        [0.4065 0.6333 0.6098 0.4591;
+         0.8386 0.3980 0.6572 0.5000;
+         0.5645 0.4617 0.5710 0.7865;
+         0.8454 0.5631 0.4211 0.4466]) atol=1e-3
+    @test y.grad ≈ Tensor(
+        [0.4065 0.6333 0.6098 0.4591;
+         0.8386 0.3980 0.6572 0.5000;
+         0.5645 0.4617 0.5710 0.7865;
+         0.8454 0.5631 0.4211 0.4466]) atol=1e-3
+end
+
+@testset "Exp and log functions" begin
+    a = Tensor([1.9822 2.9751 2.7479 0.6117;
+        0.4868 0.6896 0.5339 0.4502;
+        1.8592 1.4303 0.5293 0.0335;
+        1.4060 0.7159 1.8668 1.3557], requires_grad=true)
+    b = Tensor([0.0199 0.2602 1.1010 0.5227;
+        2.1207 0.5005 1.0041 0.2085;
+        1.0394 1.4041 1.7668 2.8588;
+        1.1632 2.1127 2.0171 0.5325], requires_grad=true)
+    x = Tensor([1.0907 -4.1605  2.6949 -5.8884;
+        -2.9132  5.2464  3.0290 -0.7780;
+        -0.5783 -4.1475  0.2837 -0.8361;
+        -3.2546  3.0161  4.7476 -0.3065], requires_grad=true)
+    y = Tensor([1.7844  2.0395  4.8263 -2.9165;
+        -6.5405  2.6275 -1.6893  2.5677;
+         1.3083 -1.1507 -1.4864 -1.0692;
+        -3.6258 -5.3563 -0.4727 -3.0136], requires_grad=true)
+    
+    @test log(a + b) ≈ Tensor([0.6942 1.1741 1.3478 0.1261;
+        0.9584 0.1740 0.4305 -0.4175;
+        1.0642 1.0418 0.8312 1.0621;
+        0.9436 1.0398 1.3568 0.6356]) atol=1e-3
+    @test log2(a + b) ≈ Tensor([1.0015 1.6939 1.9444 0.1819;
+        1.3827 0.2511 0.6211 -0.6023;
+        1.5354 1.5030 1.1992 1.5322;
+        1.3613 1.5001 1.9575 0.9170]) atol=1e-3
+    @test log10(a + b) ≈ Tensor([0.3015 0.5099 0.5853 0.0548;
+        0.4162 0.0756 0.1870 -0.1813;
+        0.4622 0.4525 0.3610 0.4612;
+        0.4098 0.4516 0.5893 0.2760]) atol=1e-3
+    @test exp(x + y) ≈ Tensor([1.7727e+01 1.1991e-01 1.8468e+03 1.5000e-04;
+        7.8399e-05 2.6278e+03 3.8179e+00 5.9877e+00;
+        2.0751e+00 5.0006e-03 3.0038e-01 1.4878e-01;
+        1.0277e-03 9.6308e-02 7.1873e+01 3.6149e-02]) rtol=1e-3
+    
+    t = log(a + b)
+    Jacobi.backward(t)
+    @test a.grad ≈ Tensor([0.4995 0.3091 0.2598 0.8815;
+        0.3835 0.8403 0.6502 1.5181;
+        0.3450 0.3528 0.4355 0.3457;
+        0.3892 0.3535 0.2575 0.5296]) atol=1e-3
+    @test b.grad ≈ Tensor([0.4995 0.3091 0.2598 0.8815;
+        0.3835 0.8403 0.6502 1.5181;
+        0.3450 0.3528 0.4355 0.3457;
+        0.3892 0.3535 0.2575 0.5296]) atol=1e-3
+    Jacobi.zero_grad(t)
+
+    t = log2(a + b)
+    Jacobi.backward(t)
+    @test a.grad ≈ Tensor([0.7206 0.4459 0.3748 1.2718;
+        0.5533 1.2122 0.9380 2.1902;
+        0.4977 0.5090 0.6283 0.4988;
+        0.5615 0.5100 0.3715 0.7641]) atol=1e-3
+    @test b.grad ≈ Tensor([0.7206 0.4459 0.3748 1.2718;
+        0.5533 1.2122 0.9380 2.1902;
+        0.4977 0.5090 0.6283 0.4988;
+        0.5615 0.5100 0.3715 0.7641]) atol=1e-3
+    Jacobi.zero_grad(t)
+end
+
+@testset "ReLU, abs, sing and clamp" begin
+    a = Tensor([-0.6952  0.7402  1.0230  1.0980 -0.2954;
+        -0.1393  0.2698 -1.2053  0.1689  0.5245;
+         0.6325 -2.1261 -0.3915 -0.2651 -2.6393;
+         1.0331 -0.2566  0.9003 -0.7683  0.5209;
+        -1.3129 -1.4920 -0.4943  0.2378  1.4655], requires_grad=true)
+    b = Tensor([1.1522 -0.6649 -2.3477 -0.5182 -0.0801;
+         0.2677 -0.2388 -1.0562  1.4917  1.8753;
+        -0.4299  0.6285  1.3538 -0.6436  1.3562;
+         1.2945  1.2706  1.4878  1.1928 -1.4192;
+        -0.0069 -1.0086 -1.7845 -0.8728  2.2078], requires_grad=true)
+    c = Tensor([-0.9375 -0.7882 -1.0941  1.1631  1.0990;
+         0.4606 -0.7650  0.4314  1.1247  0.6326;
+        -0.3426  2.1637 -0.7049 -0.6188 -1.8921;
+         1.2071  0.3337  0.0904 -0.7059  0.2790;
+        -0.1160  1.4463 -0.0761  0.0308  0.4501], requires_grad=true)
+    
+    t = Jacobi.relu(a * b + c)
+    Jacobi.backward(t)
+    @test t ≈ Tensor([0.0000 1.8333 3.3019 3.5366 1.7197;
+        1.1055 0.0000 0.0000 2.1188 0.4334;
+        0.0000 4.3300 3.8412 0.0000 0.0000;
+        0.9435 0.0000 0.0000 0.0000 3.1764;
+        0.0000 1.1889 1.6515 0.0000 0.0000]) atol=1e-3
+    @test a.grad ≈ Tensor([-3.6109  2.0720  2.6949  2.5320 -1.4581;
+         0.5539  3.6347  0.2827  1.0681  1.3281;
+        -3.0126 -1.2950  1.9823  2.7584 -2.7931;
+         1.0721  2.1430  0.9263 -0.1247  2.2009;
+        -3.0126 -1.2950  1.9823  2.7584 -2.7931]) atol=1e-3
+    @test b.grad ≈ Tensor([0.8938 -1.3756 -1.3756 -0.8345  0.1986;
+         0.0132 -2.8779 -2.8779  1.0100  0.7534;
+        -0.3050  0.1372  0.1372 -0.1823  0.7180;
+        -0.5994  1.0707  1.0707  1.2669  0.4986;
+         1.0454 -1.4692 -1.4692  0.2291  0.7500]) atol=1e-3
+    @test c.grad ≈ Tensor([0.0 1.0 1.0 1.0 1.0;
+        1.0 0.0 0.0 1.0 1.0;
+        0.0 1.0 1.0 0.0 0.0;
+        1.0 0.0 0.0 0.0 1.0;
+        0.0 1.0 1.0 0.0 0.0]) atol=1e-3
+    Jacobi.zero_grad(t)
+
+    # return self / (self.abs() + 1e-10)
+
+    # t = sign(a * b + c)
+    # println(t.data)
+    # Jacobi.backward(t)
+    # @test t ≈ Tensor([0.5567  1.8333  3.3019  3.5366  1.7197;
+    #     1.1055  1.8087  1.8429  2.1188  0.4334;
+    #     0.3396  4.3300  3.8412  1.8787 11.9116;
+    #     0.9435  1.2277  2.9178  3.5745  3.1764;
+    #     1.5179  1.1889  1.6515  2.1918  0.0150]) atol=1e-3
+    # @test a.grad ≈ Jacobi.zeros_like(a) atol=1e-3
+    # @test b.grad ≈ Jacobi.zeros_like(b) atol=1e-3
+    # @test c.grad ≈ Jacobi.zeros_like(c) atol=1e-3
+    # Jacobi.zero_grad(t)
 end

@@ -1,11 +1,14 @@
 module Jacobi
 
-export @assert, NoGradException, NullGradException, MismatchDimsException
-export AbstractTensor, AutogradMetadata, Tensor, ones_tensor, zeros_tensor, eye, 
-    arange, rand_tensor, randn_tensor, randexp_tensor, backward, ⊙, zero_grad
+export AbstractTensor, AutogradMetadata, Tensor, ones, zeros, eye, 
+    arange, rand, randn, randexp, backward, zero_grad
+export ⊙, multiply_n, reciprocal, relu, clamp, sigmoid, elu, silu,
+    relu6, hard_silu, gelu, quick_gelu, leaky_relu, mish, softplus,
+    softsign
 
-include("exceptions.jl")
 include("tensor.jl")
 include("math.jl")
+
+@inline multiply_n(x::Tensor, y::Tensor)  = x ⊙ y
 
 end
