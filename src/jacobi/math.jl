@@ -144,7 +144,7 @@ Base.:+(x::Tensor, y::Tensor) = apply!(tf_sum, x, y)
 Base.:-(x::Tensor, y::Tensor) = apply!(tf_subtract, x, y)
 Base.:*(x::Tensor, y::Tensor) = apply!(tf_mult, x, y)
 ⊙(x::Tensor, y::Tensor) = apply!(tf_hadamard_prod, x, y)
-Base.operator_precedence(⊙) = Base.operator_precedence(:*)
+# Base.operator_precedence(⊙) = Base.operator_precedence(:*)
 
 Base.:^(x::Tensor, n::Number) = apply!(tf_pow, x, n)
 Base.sqrt(x::Tensor) = x ^ 0.5

@@ -27,7 +27,7 @@ mutable struct Tensor <: AbstractTensor
     autograd::AutogradMetadata
     name::String
 
-    Tensor(data::Numeric, ctx::Tuple{Vararg{<:AbstractTensor}}=(); requires_grad::Bool=false, name::String="") = 
+    Tensor(data::Numeric, ctx::Tuple{Vararg{<:AbstractTensor}} = (); requires_grad::Bool=false, name::String="") = 
         new(data, nothing, ctx, AutogradMetadata(requires_grad), name)
     Tensor(data::Numeric, ctx::Tuple{Vararg{<:AbstractTensor}}, autograd::AutogradMetadata, name::String="") = 
         new(data, nothing, ctx, autograd, name)
@@ -186,5 +186,9 @@ function apply!(tfunc::TensorFunction, args...)::Tensor
 end
 
 function Base.show(io::IO, tensor::Tensor)
-    println(io, "Tensor(data=$(tensor.data); grad=$(tensor.grad))")
+    print(io, "Tensor(\ndata = ")
+    Base.show(io, "text/plain", tensor.data)
+    print(io, "\ngrad = ")
+    Base.show(io, "text/plain", tensor.grad === nothing ? nothing : tensor.grad.data)
+    println(io, ")")
 end
