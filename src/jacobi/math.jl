@@ -30,6 +30,12 @@ tf_mult = TensorFunction(
     (x::Tensor, y::Tensor) -> (g::Tensor) -> (g * transpose(y), transpose(x) * g),
 )
 
+# tf_div = TensorFunction(
+#     "/",
+#     (x::Tensor, y::Tensor) -> x.data ./ y.data,
+#     (x::Tensor, y::Tensor) -> (g::Tensor) -> (g / y, transpose(x) * g),
+# )
+
 tf_hadamard_prod = TensorFunction(
     "⊙",
     (x::Tensor, y::Tensor) -> x.data .* y.data,
@@ -45,7 +51,7 @@ tf_pow = TensorFunction(
 tf_exp = TensorFunction(
     "exp",
     (x::Tensor) -> exp.(x.data),
-    (x::Tensor) -> (g::Tensor) -> x ⊙ g
+    (x::Tensor) -> (g::Tensor) -> exp(x) ⊙ g
 )
 
 tf_logb = TensorFunction(
@@ -93,7 +99,7 @@ tf_cos = TensorFunction(
 tf_tan = TensorFunction(
     "tan",
     (x::Tensor) -> tan.(x.data),
-    (x::Tensor) -> (g::Tensor) -> Tensor(sec.(x.data) ^ 2) ⊙ g
+    (x::Tensor) -> (g::Tensor) -> Tensor(sec.(x.data) .^ 2) ⊙ g
 )
 
 tf_asin = TensorFunction(
@@ -129,7 +135,7 @@ tf_cosh = TensorFunction(
 tf_tanh = TensorFunction(
     "tanh",
     (x::Tensor) -> tanh.(x.data),
-    (x::Tensor) -> (g::Tensor) -> (ones_like(x) - tanh(x)) ⊙ g
+    (x::Tensor) -> (g::Tensor) -> (ones_like(x) - (tanh(x) ^ 2)) ⊙ g
 )
 
 Base.transpose(x::Tensor) = apply!(tf_transpose, x)
@@ -138,6 +144,7 @@ Base.:+(x::Tensor, y::Tensor) = apply!(tf_sum, x, y)
 Base.:-(x::Tensor, y::Tensor) = apply!(tf_subtract, x, y)
 Base.:*(x::Tensor, y::Tensor) = apply!(tf_mult, x, y)
 ⊙(x::Tensor, y::Tensor) = apply!(tf_hadamard_prod, x, y)
+Base.operator_precedence(⊙) = Base.operator_precedence(:*)
 
 Base.:^(x::Tensor, n::Number) = apply!(tf_pow, x, n)
 Base.sqrt(x::Tensor) = x ^ 0.5
@@ -171,15 +178,17 @@ Base.cosh(x::Tensor) = apply!(tf_cosh, x)
 Base.tanh(x::Tensor) = apply!(tf_tanh, x)
 
 @inline sigmoid(x::Tensor) = reciprocal(ones_like(x) + exp(-x))
-@inline elu(x::Tensor; α::Number = 1.0) = relu(x) - fill(α, size(x)) ⊙ relu(ones_like(x) - exp(x))
 @inline silu(x::Tensor) = x ⊙ sigmoid(x)
+@inline quick_gelu(x::Tensor) = x ⊙ sigmoid(x ⊙ fill(1.702, size(x)))
+
+@inline elu(x::Tensor; α::Number = 1.0) = relu(x) - fill(α, size(x)) ⊙ relu(ones_like(x) - exp(x))
 @inline relu6(x::Tensor) = relu(x) - relu(x - fill(6, size(x)))
 @inline hard_silu(x::Tensor) = x ⊙ relu6(x + fill(3, size(x))) ⊙ fill(1/6, size(x))
-@inline gelu(x::Tensor) = fill(0.5, size(x)) ⊙ (ones_like(x) + tanh(x ⊙ fill(0.7978845608, size(x)) ⊙ (ones_like(x) + fill(0.044715, size(x)) ⊙ (x ^ 2))))
-@inline quick_gelu(x::Tensor) = x ⊙ sigmoid(x ⊙ fill(1.702, size(x)))
 @inline leaky_relu(x::Tensor; α::Number = 0.01) = relu(x) - relu(-fill(α, size(x)) ⊙ x)
-@inline mish(x::Tensor) = x ⊙ tanh(softplus(x))
+
+@inline gelu(x::Tensor) = fill(0.5, size(x)) ⊙ x ⊙ (ones_like(x) + tanh(fill(0.7978845608, size(x)) ⊙ (x + (fill(0.044715, size(x)) ⊙ (x ^ 3)))))
 @inline softplus(x::Tensor; β::Number = 1.0) = fill(1 / β, size(x)) ⊙ log(ones_like(x) + exp(x ⊙ fill(β, size(x))))
+@inline mish(x::Tensor) = x ⊙ tanh(softplus(x))
 @inline softsign(x::Tensor) = x ⊙ reciprocal(ones_like(x) + abs(x))
 
 # function Base.maximum(x::Tensor)::Number

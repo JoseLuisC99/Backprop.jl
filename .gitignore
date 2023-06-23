@@ -25,3 +25,5 @@ Manifest.toml
 
 # Extras
 bibliography/
+.vscode/
+notebooks/proof_of_concept/

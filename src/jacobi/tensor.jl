@@ -73,19 +73,20 @@ function Base.iterate(x::Tensor, state::Integer)
 end
 
 function ones(dims::DimsArg; eltype::Type{D}=Float64, kwargs...) where D<:Number
-    return Tensor(Base.ones(D, dims); name="t_zeros", kwargs...)
+    return Tensor(Base.ones(D, dims); name="t_ones", kwargs...)
 end
 
 function zeros(dims::DimsArg; eltype::Type{D}=Float64, kwargs...) where D<:Number
-    return Tensor(Base.zeros(D, dims); name="t_ones", kwargs...)
+    return Tensor(Base.zeros(D, dims); name="t_zeros", kwargs...)
 end
-
-ones_like(x::Tensor) = ones(size(x))
-zeros_like(x::Tensor) = zeros(size(x))
 
 function fill(value::Number, dims::DimsArg; kwargs...)
     return Tensor(Base.fill(value, dims); name="t_const($value)", kwargs...)
 end
+
+ones_like(x::Tensor; kwargs...) = ones(size(x); kwargs...)
+zeros_like(x::Tensor; kwargs...) = zeros(size(x); kwargs...)
+fill_like(value::Number, x::Tensor; kwargs...) = fill(value, size(x); kwargs...)
 
 function eye(dims::DimsArg; eltype::Type{D}=Float64, kwargs...)::Tensor where D<:Number
     if typeof(dims) <: Integer
@@ -111,29 +112,34 @@ function randexp(dims::DimsArg; eltype::Type{D}=Float64, rng::Random.AbstractRNG
 end
 
 function pullback_eval_seq(x::Tensor)::Vector{Tensor}
-    dag = Vector{Tensor}()
-
-    function topological_sort(node, dag)
-        for v ∈ node.ctx
-            topological_sort(v, dag)
+    function topological_sort(node, dag, visited)
+        if node ∉ visited
+            push!(visited, node)
+            for v ∈ node.ctx
+                topological_sort(v, dag, visited)
+            end
+            push!(dag, node)
         end
-        push!(dag, node)
     end
 
-    topological_sort(x, dag)
+    dag = Vector{Tensor}()
+    visited = Set{Tensor}()
+    topological_sort(x, dag, visited)
 	return dag[end:-1:begin]
 end
 
-function backward(x::Tensor; retain_graph::Bool=false, allow_high_order::Bool=false)::Nothing
+function backward(x::Tensor; retain_graph::Bool=false)::Nothing
     graph = x.autograd.graph === nothing ? pullback_eval_seq(x) : x.autograd.graph
-    x.grad = ones(size(x), name="grad", requires_grad=allow_high_order)
+    x.grad = ones(size(x), name="grad")
 
     for tensor in graph
         !any(t.autograd.requires_grad for t ∈ tensor.ctx) && continue
         
         @assert (tensor.grad !== nothing) "Null gradient on tensor variable"
         out_grads = tensor.autograd.grad_fn(tensor.grad)
-        typeof(out_grads) <: Tensor ? out_grads = (out_grads, ) : nothing
+        if typeof(out_grads) <: Tensor
+            out_grads = (out_grads, )
+        end
         for (t, g) in zip(tensor.ctx, out_grads)
             if g !== nothing && t.autograd.requires_grad
                 @assert (size(t) == size(g)) "Gradient dimension must match tensor dimension"
@@ -159,6 +165,16 @@ function zero_grad(x::Tensor)::Nothing
     return
 end
 
+function clear_grads(x::Tensor)::Nothing
+    graph = x.autograd.graph === nothing ? pullback_eval_seq(x) : x.autograd.graph
+    for tensor in graph
+        if tensor.autograd.requires_grad
+            tensor.grad = nothing
+        end
+    end
+    return
+end
+
 function apply!(tfunc::TensorFunction, args...)::Tensor
     tensor_args = filter(x -> x isa Tensor, args)
     if any(t.autograd.requires_grad for t ∈ tensor_args)
@@ -167,4 +183,8 @@ function apply!(tfunc::TensorFunction, args...)::Tensor
     else
         return Tensor(tfunc.forward(args...), tensor_args, name=tfunc.op)
     end
+end
+
+function Base.show(io::IO, tensor::Tensor)
+    println(io, "Tensor(data=$(tensor.data); grad=$(tensor.grad))")
 end
