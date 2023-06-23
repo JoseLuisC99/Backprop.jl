@@ -36,8 +36,7 @@ Jacobi.backward(o)
 x
 
 # ╔═╡ eb68eb42-ca0a-4bfe-9c62-c535c06e9323
-# Backprop.plot_tensor(o)
-o
+Backprop.plot_tensor(o)
 
 # ╔═╡ Cell order:
 # ╠═9ff6db90-11f1-11ee-1f2d-f14e4c31aaa8
