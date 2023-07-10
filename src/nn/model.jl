@@ -23,3 +23,6 @@ function Sequential(layers::Vararg{<:AbstractLayer})::Model
 
     return Model(params, forward)
 end
+
+function forward(model::Model)::Nothing
+end

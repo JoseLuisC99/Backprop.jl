@@ -1,6 +1,7 @@
 using LinearAlgebra
 import Random
 import Base.:(==)
+import Base.Broadcast: broadcasted, materialize
 
 const Numeric{T<:Number} = Union{T, AbstractArray{<:T}}
 const DimsArg = Union{Integer, Tuple{Vararg{Integer}}}
@@ -53,16 +54,6 @@ Base.lastindex(x::Tensor) = Base.lastindex(x.data)
 Base.firstindex(x::Tensor, dim::Integer) = 1
 Base.lastindex(x::Tensor, dim::Integer) = Base.lastindex(x.data, dim)
 Base.eltype(x::Tensor) = Base.eltype(x.data)
-
-function Base.getindex(x::Tensor, keys...)::Tensor
-    autograd = AutogradMetadata(x.autograd.requires_grad, 
-        function (out::Tensor)
-            _grad = Base.zeros(size(x))
-            _grad[keys...] = out.data
-            return x.autograd.requires_grad ? Tensor(_grad) : nothing
-        end)
-    return Tensor(x.data[keys...], (x, ), autograd, "getindex")
-end
 
 function Base.iterate(x::Tensor)
     @inbounds return Base.length(x) == 0 ? nothing : (x[1], 2)
@@ -142,7 +133,7 @@ function backward(x::Tensor; retain_graph::Bool=false)::Nothing
         end
         for (t, g) in zip(tensor.ctx, out_grads)
             if g !== nothing && t.autograd.requires_grad
-                @assert (size(t) == size(g)) "Gradient dimension must match tensor dimension"
+                @assert (size(t) == size(g)) "gradient dimension $(size(g)) must match tensor dimension $(size(t))"
                 t.grad === nothing ? t.grad = g : t.grad = t.autograd.grad_accumulator(t.grad, g)
             end
         end
@@ -191,4 +182,12 @@ function Base.show(io::IO, tensor::Tensor)
     print(io, "\ngrad = ")
     Base.show(io, "text/plain", tensor.grad === nothing ? nothing : tensor.grad.data)
     println(io, ")")
+end
+
+function broadcasted(f::Function, A::Tensor, B::Tensor)
+    return Tensor(f.(A.data, B.data))
+end
+
+function materialize(::Type{Tensor}, x)
+    return Tensor(x)
 end

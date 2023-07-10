@@ -7,6 +7,7 @@ export ⊙, multiply_n, reciprocal, relu, clamp, sigmoid, elu, silu,
     softsign
 
 include("tensor.jl")
+include("memory_ops.jl")
 include("math.jl")
 
 @inline multiply_n(x::Tensor, y::Tensor)  = x ⊙ y

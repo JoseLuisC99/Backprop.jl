@@ -15,7 +15,10 @@ function Linear(in_features::Int64, out_features::Int64, affine::Bool = true)::L
     function call(x::Tensor)
         output = x * weight
         if affine
-            output = output + bias
+            @assert length(x) == length(x) "data shape $(size(x)) must be compatible with bias shape $(size(bias))"
+            repeats = Base.ones(Int64, ndims(x))
+            repeats[begin] = size(x)[begin]
+            output = output + repeat(bias, Tuple(repeats))
         end
         return output
     end
