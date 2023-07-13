@@ -1,4 +1,5 @@
 Base.convert(::Type{<:Numeric}, x::Tensor) = x.data
+Base.convert(::Type{<:Number}, x::Array{<:Number, 0}) = x[1]
 
 function Base.getindex(x::Tensor, keys...)::Tensor
     autograd = AutogradMetadata(x.autograd.requires_grad, 
@@ -22,7 +23,8 @@ function Base.reshape(x::Tensor, shape::DimsArg)::Tensor
         function (out::Tensor)
             return x.autograd.requires_grad ? reshape(out, size(x)) : nothing
         end)
-    return Tensor(reshape(x.data, new_shape), (x, ), autograd, "reshape_$(x.name)")
+    data = size(x) == () ? [x.data] : x.data
+    return Tensor(reshape(data, new_shape), (x, ), autograd, "reshape_$(x.name)")
 end
 
 # function expand(x::Tensor, sizes::Tuple{Vararg{Integer}})::Tensor
@@ -53,7 +55,7 @@ function Base.repeat(x::Tensor, repeats::Tuple{Vararg{Integer}})::Tensor
             indices = repeat(indices, repeats...)
 
             for i in 1:length(x)
-                grad[i] = sum(out[indices .== i])
+                grad[i] = sum(out[indices .== i])[begin]
             end
             return x.autograd.requires_grad ? Tensor(reshape(grad, size(x))) : nothing
         end)
@@ -68,11 +70,11 @@ function Base.permutedims(x::Tensor, perm::Tuple{Vararg{Integer}})::Tensor
     return Tensor(Base.permutedims(x.data, perm), (x, ), autograd, "perm_$(x.name)")
 end
 
-function flip(x::Tensor)::Tensor
-end
+# function flip(x::Tensor)::Tensor
+# end
 
-function pad(x::Tensor)::Tensor
-end
+# function pad(x::Tensor)::Tensor
+# end
 
-function shrink(x::Tensor)::Tensor
-end
+# function shrink(x::Tensor)::Tensor
+# end

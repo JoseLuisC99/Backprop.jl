@@ -12,13 +12,12 @@ mutable struct AutogradMetadata
     requires_grad::Bool
     grad_fn::Union{Nothing, Function}
     grad_accumulator::Union{Nothing, Function}
-    graph::Union{Nothing, Vector{<:AbstractTensor}}
 
-    AutogradMetadata() = new(false, nothing, nothing, nothing)
+    AutogradMetadata() = new(false, nothing, nothing)
     AutogradMetadata(requires_grad::Bool) = 
-        new(requires_grad, nothing, Base.:+, nothing)
+        new(requires_grad, nothing, Base.:+)
     AutogradMetadata(requires_grad::Bool, grad_fn::Function) =
-        new(requires_grad, grad_fn, Base.:+, nothing)
+        new(requires_grad, grad_fn, Base.:+)
 end
 
 mutable struct Tensor <: AbstractTensor
@@ -50,9 +49,9 @@ Base.length(x::Tensor) = prod(size(x))
 Base.IndexStyle(::Type{<:AbstractTensor}) = IndexLinear()
 
 Base.firstindex(x::Tensor) = 1
-Base.lastindex(x::Tensor) = Base.lastindex(x.data)
+Base.lastindex(x::Tensor) = lastindex(x.data)
 Base.firstindex(x::Tensor, dim::Integer) = 1
-Base.lastindex(x::Tensor, dim::Integer) = Base.lastindex(x.data, dim)
+Base.lastindex(x::Tensor, dim::Integer) = lastindex(x.data, dim)
 Base.eltype(x::Tensor) = Base.eltype(x.data)
 
 function Base.iterate(x::Tensor)
@@ -119,8 +118,8 @@ function pullback_eval_seq(x::Tensor)::Vector{Tensor}
 	return dag[end:-1:begin]
 end
 
-function backward(x::Tensor; retain_graph::Bool=false)::Nothing
-    graph = x.autograd.graph === nothing ? pullback_eval_seq(x) : x.autograd.graph
+function backward!(x::Tensor)::Nothing
+    graph = pullback_eval_seq(x)
     x.grad = ones(size(x), name="grad")
 
     for tensor in graph
@@ -133,21 +132,16 @@ function backward(x::Tensor; retain_graph::Bool=false)::Nothing
         end
         for (t, g) in zip(tensor.ctx, out_grads)
             if g !== nothing && t.autograd.requires_grad
-                @assert (size(t) == size(g)) "gradient dimension $(size(g)) must match tensor dimension $(size(t))"
+                # @assert (size(t) == size(g)) "gradient dimension $(size(g)) must match tensor dimension $(size(t))"
                 t.grad === nothing ? t.grad = g : t.grad = t.autograd.grad_accumulator(t.grad, g)
             end
         end
     end
-
-    if retain_graph
-        x.autograd.graph = graph
-    end
-
     return
 end
 
 function zero_grad(x::Tensor)::Nothing
-    graph = x.autograd.graph === nothing ? pullback_eval_seq(x) : x.autograd.graph
+    graph = pullback_eval_seq(x)
     for tensor in graph
         if tensor.autograd.requires_grad
             tensor.grad = zeros_like(tensor)
@@ -157,7 +151,7 @@ function zero_grad(x::Tensor)::Nothing
 end
 
 function clear_grads(x::Tensor)::Nothing
-    graph = x.autograd.graph === nothing ? pullback_eval_seq(x) : x.autograd.graph
+    graph = pullback_eval_seq(x)
     for tensor in graph
         if tensor.autograd.requires_grad
             tensor.grad = nothing
@@ -166,28 +160,66 @@ function clear_grads(x::Tensor)::Nothing
     return
 end
 
-function apply!(tfunc::TensorFunction, args...)::Tensor
+function apply(tfunc::TensorFunction, args...)::Tensor
     tensor_args = filter(x -> x isa Tensor, args)
-    if any(t.autograd.requires_grad for t ∈ tensor_args)
-        autograd = AutogradMetadata(true, tfunc.backward(args...))
-        return Tensor(tfunc.forward(args...), tensor_args, autograd, tfunc.op)
-    else
-        return Tensor(tfunc.forward(args...), tensor_args, name=tfunc.op)
-    end
+    # if any(t.autograd.requires_grad for t ∈ tensor_args)
+    #     autograd = AutogradMetadata(true, tfunc.backward(args...))
+    #     return Tensor(tfunc.forward(args...), tensor_args, autograd, tfunc.op)
+    # else
+    #     return Tensor(tfunc.forward(args...), tensor_args, name=tfunc.op)
+    # end
+    autograd = AutogradMetadata(true, tfunc.backward(args...))
+    return Tensor(tfunc.forward(args...), tensor_args, autograd, tfunc.op)
 end
 
-function Base.show(io::IO, tensor::Tensor)
-    print(io, "Tensor(\ndata = ")
-    Base.show(io, "text/plain", tensor.data)
-    print(io, "\ngrad = ")
-    Base.show(io, "text/plain", tensor.grad === nothing ? nothing : tensor.grad.data)
-    println(io, ")")
-end
+# function Base.show(io::IO, tensor::Tensor)
+#     print(io, "Tensor $(tensor.name) (\ndata = ")
+#     Base.show(io, "text/plain", tensor.data)
+#     print(io, "\ngrad = ")
+#     Base.show(io, "text/plain", tensor.grad === nothing ? nothing : tensor.grad.data)
+#     println(io, ")")
+# end
+
+# function broadcasted(f::Function, A::Tensor, B::Tensor)
+#     autograd = AutogradMetadata(A.autograd.requires_grad || B.autograd.requires_grad, 
+#         function (out::Tensor)
+#             return A.autograd.requires_grad ? out : nothing,
+#                 B.autograd.requires_grad ? out : nothing
+#         end)
+#     println("A size: $(size(A))")
+#     println("B size: $(size(B))")
+#     return Tensor(f.(A.data, B.data), (A, B), autograd, "broadcasted \\n($(Base.nameof(f)))")
+# end
 
 function broadcasted(f::Function, A::Tensor, B::Tensor)
-    return Tensor(f.(A.data, B.data))
+    if size(A) == size(B)
+        return f(A, B)
+    end
+	
+    broadcast_ndims = max(ndims(A), ndims(B))
+    if ndims(A) != broadcast_ndims
+        new_dims = Tuple([Base.ones(Int64, broadcast_ndims - ndims(A)); size(A)...])
+        A = reshape(A, new_dims)
+    end
+    if ndims(B) != broadcast_ndims
+        new_dims = Tuple([Base.ones(Int64, broadcast_ndims - ndims(B)); size(B)...])
+        B = reshape(B, new_dims)
+    end
+
+	repeats = Tuple(max(da, db) ÷ min(da, db) for (da, db) in zip(size(A), size(B)))
+	final_dims = Tuple(max(da, db) for (da, db) in zip(size(A), size(B)))
+
+	if size(A) != final_dims
+		A = repeat(A, repeats)
+	end
+	if size(B) != final_dims
+		B = repeat(B, repeats)
+	end
+
+	return f(A, B)
 end
 
 function materialize(::Type{Tensor}, x)
+    println("materialize!")
     return Tensor(x)
 end
