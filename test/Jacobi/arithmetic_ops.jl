@@ -76,7 +76,7 @@ end
     q = Tensor([1.3, 0.4, 2.9, 2.2])
 
     t = m + n + p
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test m.grad ≈ Jacobi.ones(size(m))
     @test n.grad ≈ Jacobi.ones(size(n))
     @test p.grad === nothing
@@ -86,33 +86,33 @@ end
     @test p.grad === nothing
 
     t = (m ⊙ n) + p
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test m.grad ≈ Tensor([0.2, 1.9, 7.5])
     @test n.grad ≈ Tensor([4.4, 0.9, 2.6])
     @test p.grad === nothing
     Jacobi.zero_grad(t)
 
     t = (m - n) + p
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test m.grad ≈ Jacobi.ones(size(m))
     @test n.grad ≈ -Jacobi.ones(size(n))
     @test p.grad === nothing
     Jacobi.zero_grad(t)
 
     t = -(p ⊙ n)
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test n.grad ≈ Tensor([-1.9, -7.8, -5.6])
     @test p.grad === nothing
     Jacobi.zero_grad(t)
 
     t = (m + n) ^ 2
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test m.grad ≈ Tensor([9.2, 5.6, 20.2]) atol=1e-3
     @test n.grad ≈ Tensor([9.2, 5.6, 20.2]) atol=1e-3
     Jacobi.zero_grad(t)
 
     t = (m + n) ^ 0.5
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test m.grad ≈ Tensor([0.2331, 0.2988, 0.1573]) atol=1e-3
     @test n.grad ≈ Tensor([0.2331, 0.2988, 0.1573]) atol=1e-3
     Jacobi.zero_grad(t)
@@ -140,7 +140,7 @@ end
                 -3.9648  0.3382  2.6229], requires_grad=true)
 
     t = W * x + b
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test W.grad ≈ Tensor([0.1503 -0.9509  1.7091  1.0097;
         0.1503 -0.9509  1.7091  1.0097;
         0.1503 -0.9509  1.7091  1.0097;
@@ -151,7 +151,7 @@ end
     Jacobi.zero_grad(t)
 
     t = (W * V) + U
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test W.grad ≈ Tensor([-3.7257 -0.2565  2.8874 -0.2230;
         -3.7257 -0.2565 2.8874 -0.2230;
         -3.7257 -0.2565 2.8874 -0.2230;
@@ -162,7 +162,7 @@ end
     Jacobi.zero_grad(t)
 
     t = (U + Y) ^ 2
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test U.grad ≈ Tensor([-3.7054e+00 -2.0482e+00  4.7082e+00;
         -1.0121e+01  6.5020e-01 -1.0600e-02;
         -2.1410e+00 -5.7232e+00 -1.4965e+01;
@@ -176,7 +176,7 @@ end
     Jacobi.zero_grad(t)
 
     t = U ⊙ Y
-    Jacobi.backward(t, retain_graph=true)
+    Jacobi.backward!(t)
     @test U.grad ≈ Tensor([-1.2500 -1.1406  0.9118;
         -4.1188 -0.7481  0.5305;
         -0.7784 -2.0328 -5.7128;

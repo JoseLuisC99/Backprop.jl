@@ -15,7 +15,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
         0.7790 -0.1417 -0.7258], requires_grad=true)
 
     t = Jacobi.reciprocal(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([0.2831 -0.1907  0.2721;
         -0.7285  0.4043 -0.9174;
         22.0920 -0.4805 -3.1740]) atol=1e-3
@@ -32,7 +32,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.zero_grad(t)
 
     # t = sqrt(a * b + c)
-    # Jacobi.backward(t)
+    # Jacobi.backward!(t)
     # @test t ≈ Tensor([0.2831 -0.1907  0.2721;
     #     -0.7285  0.4043 -0.9174;
     #     22.0920 -0.4805 -3.1740]) atol=1e-3
@@ -79,7 +79,7 @@ end
     #     1.0277e-03 9.6308e-02 7.1873e+01 3.6149e-02]) rtol=1e-3
     
     t = exp(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.4190e+01 5.2740e-03 3.9454e+01;
         2.5343e-01 1.1865e+01 3.3620e-01;
         1.0463e+00 1.2480e-01 7.2975e-01]) atol=1e-3

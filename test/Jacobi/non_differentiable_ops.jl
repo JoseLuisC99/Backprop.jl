@@ -20,7 +20,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
         -0.1160  1.4463 -0.0761  0.0308  0.4501], requires_grad=true)
     
     t = Jacobi.relu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([0.0000 1.8333 3.3019 3.5366 1.7197;
         1.1055 0.0000 0.0000 2.1188 0.4334;
         0.0000 4.3300 3.8412 0.0000 0.0000;
@@ -44,7 +44,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.zero_grad(t)
 
     t = abs(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([0.5567  1.8333  3.3019  3.5366  1.7197;
         1.1055  1.8087  1.8429  2.1188  0.4334;
         0.3396  4.3300  3.8412  1.8787 11.9116;
@@ -68,7 +68,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.zero_grad(t)
 
     t = sign(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-1. 1. 1. 1. 1.;
          1. -1. -1.  1.  1.;
         -1.  1.  1. -1. -1.;
@@ -80,7 +80,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.zero_grad(t)
 
     t = Jacobi.clamp(a * b + c, -2.0, 2.0)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.5567  1.8333  2.0000  2.0000  1.7197;
          1.1055 -1.8087 -1.8429  2.0000  0.4334;
         -0.3396  2.0000  2.0000 -1.8787 -2.0000;

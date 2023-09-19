@@ -19,7 +19,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
         -0.6658  0.6985 -0.2831], requires_grad=true)
     
     t = sin(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.4861  0.8555  0.9915;
         -0.9809  0.2615 -0.9981;
         -0.4925  0.3308 -0.9300;
@@ -39,7 +39,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.zero_grad(t)
 
     t = cos(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([0.8739 -0.5178 -0.1301;
          0.1944  0.9652  0.0614;
          0.8703  0.9437 -0.3676;
@@ -59,7 +59,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.zero_grad(t)
 
     t = tan(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.5561709 -1.6520051 -7.6230712;
         -5.0468173 0.2709050 -16.2538624;
         -0.5658595 0.3505411   2.5298734;
@@ -96,7 +96,7 @@ end
         -0.6658  0.6985 -0.2831], requires_grad=true)
     
     t = sinh(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.529645 4.084990 -48.847397;
         -1.851509  0.267652 -2.151368;
         -0.537998  0.343581 -3.433268;
@@ -116,7 +116,7 @@ end
     Jacobi.zero_grad(t)
 
     t = cosh(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([1.131602 4.205608 48.857635;
         2.104301 1.035199  2.372421;
         1.135536 1.057378  3.575937;
@@ -136,7 +136,7 @@ end
     Jacobi.zero_grad(t)
 
     t = tanh(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.4680  0.9713 -0.9998;
         -0.8799  0.2586 -0.9068;
         -0.4738  0.3249 -0.9601;

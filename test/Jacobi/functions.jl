@@ -15,7 +15,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
         0.7790 -0.1417 -0.7258], requires_grad=true)
     
     t = Jacobi.sigmoid(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([0.9716 0.0052 0.9753;
         0.2022 0.9223 0.2516;
         0.5113 0.1110 0.4219]) atol=1e-3 
@@ -32,7 +32,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.clear_grads(t)
 
     t = Jacobi.silu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.4316 -0.0275 3.5843;
         -0.2775  2.2813 -0.2743;
          0.0231 -0.2309 -0.1329]) atol=1e-3 
@@ -49,7 +49,7 @@ import Backprop.Jacobi: Tensor as Tensor, ⊙ as ⊙
     Jacobi.clear_grads(t)
 
     t = Jacobi.quick_gelu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.5233e+00 -6.9625e-04 3.6681e+00;
         -1.2102e-01  2.4374e+00 -1.4744e-01;
          2.3504e-02 -5.8565e-02 -1.1628e-01]) atol=1e-3 
@@ -80,7 +80,7 @@ end
         0.9772 -0.4081 -0.5361 0.8900], requires_grad=true)
 
     t = Jacobi.elu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.1002 -0.4466 -0.3199 3.8447;
         -0.6901  1.7174 -0.1383 -0.5214;
          0.0987 -0.3439  2.4012  1.3205]) atol=1e-3 
@@ -98,7 +98,7 @@ end
     Jacobi.clear_grads(t)
 
     t = Jacobi.relu6(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.1002 0.0000 0.0000 3.8447;
         0.0000 1.7174 0.0000 0.0000;
         0.0987 0.0000 2.4012 1.3205]) atol=1e-3 
@@ -116,7 +116,7 @@ end
     Jacobi.clear_grads(t)
 
     t = Jacobi.hard_silu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.1002 -0.2375 -0.1680 3.8447;
         -0.3570  1.3503 -0.0707 -0.2780;
          0.0510 -0.1811  2.1616  0.9509]) atol=1e-3 
@@ -134,7 +134,7 @@ end
     Jacobi.clear_grads(t)
 
     t = Jacobi.leaky_relu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([3.1002e+00 -5.9167e-03 -3.8548e-03 3.8447e+00;
         -1.1716e-02  1.7174e+00 -1.4884e-03 -7.3691e-03;
          9.8688e-02 -4.2140e-03  2.4012e+00  1.3205e+00]) atol=1e-3 
@@ -166,7 +166,7 @@ end
         -0.6872  1.2085], requires_grad=true)
     
     t = Jacobi.gelu(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.1515 2.1039;
          4.6334  2.8063;
         -0.1120  0.1376;
@@ -185,7 +185,7 @@ end
     Jacobi.clear_grads(t)
 
     t = Jacobi.softplus(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([0.2924 2.2498;
         4.6431 2.8711;
         0.5585 0.8161;
@@ -204,7 +204,7 @@ end
     Jacobi.clear_grads(t)
 
     t = Jacobi.mish(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.3070 2.0914;
          4.6326  2.7948;
         -0.1471  0.1564;
@@ -223,7 +223,7 @@ end
     Jacobi.clear_grads(t)
 
     t = Jacobi.softsign(a * b + c)
-    Jacobi.backward(t)
+    Jacobi.backward!(t)
     @test t ≈ Tensor([-0.5192 0.6814;
          0.8225  0.7377;
         -0.2250  0.1886;

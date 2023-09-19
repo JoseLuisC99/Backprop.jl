@@ -27,3 +27,4 @@ Manifest.toml
 bibliography/
 .vscode/
 notebooks/proof_of_concept/
+notebooks/*.gif
