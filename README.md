@@ -149,33 +149,33 @@ The training process of our API is inspired by PyTorch :heart:
 
 ```julia
 function train(model::nn.Model, dataset::data.Dataset; α::Float64 = 0.1, epochs::Int64 = 200)
-    # only for logging purposes
-	history = Vector{Float64}()
+  # only for logging purposes
+  history = Vector{Float64}()
 
-    # declare the optimizing algorithm
-	optimizer = nn.GradientDescent(model.params, lr=α)
+  # declare the optimizing algorithm
+  optimizer = nn.GradientDescent(model.params, lr=α)
 
-    # iterate over all epochs
-	for _ in 1:epochs
-		epoch_loss = 0.0
+  # iterate over all epochs
+  for _ in 1:epochs
+    epoch_loss = 0.0
 
-        # in each epoch we iterate over all datasets
-		for (Xi, yi) in dataset
-			pi = model.forward(Xi) # make the predeictions
-			loss = nn.bce_loss(pi, yi) # compute our loss
+    # in each epoch we iterate over all datasets
+    for (Xi, yi) in dataset
+      pi = model.forward(Xi) # make the predeictions
+      loss = nn.bce_loss(pi, yi) # compute our loss
 
-            # save the loss for log it
-			epoch_loss += loss.data[1]
-			
-			Jacobi.backward!(loss) # compute the gradients!
-			nn.step(optimizer) # update the weights
-			Jacobi.clear_grads(loss) # clear the gradients
-		end
-        # save the loss per epoch
-		push!(history, epoch_loss / length(dataset))
-	end
+      # save the loss for log it
+      epoch_loss += loss.data[1]
 
-	return history
+      Jacobi.backward!(loss) # compute the gradients!
+      nn.step(optimizer) # update the weights
+      Jacobi.clear_grads(loss) # clear the gradients
+    end
+    # save the loss per epoch
+    push!(history, epoch_loss / length(dataset))
+  end
+
+  return history
 end
 ```
 ![Training process](./docs/img/training_process.gif)
